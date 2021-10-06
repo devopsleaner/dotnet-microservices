@@ -20,4 +20,6 @@ namespace CommandsService.Models
         
         public ICollection<Command> Commands { get; set; } = new List<Command>();
     }
+
+    
 }

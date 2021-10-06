@@ -32,6 +32,7 @@ namespace CommandsService.Data
             _context.Platforms.Add(platform);
         }
 
+      
         public IEnumerable<Platform> GetAllPlatforms()
         {
             return _context.Platforms.ToList();
@@ -47,6 +48,10 @@ namespace CommandsService.Data
             return _context.Commands.Where(x=>x.PlatformId == platformId);
         }
 
+        public bool ExternamPlatformExists(int externamPlatformId)
+        {
+            return _context.Platforms.Any(x=>x.ExternalId == externamPlatformId);
+        }
         public bool PlatformExists(int platformId)
         {
             return _context.Platforms.Any(x=>x.Id == platformId);
