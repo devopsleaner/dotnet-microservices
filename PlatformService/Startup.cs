@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +15,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Platformservice.AsyncDataServices;
 using Platformservice.Data;
+using Platformservice.SyncDataServices.Grpc;
 using PlatformService.SyncDataServices.Http;
 
 namespace Platformservice
 {
     public class Startup
     {
-       
+
         public IConfiguration Configuration { get; }
         private readonly IWebHostEnvironment _env;
         public Startup(IConfiguration configuration, IWebHostEnvironment env)
@@ -29,20 +31,22 @@ namespace Platformservice
             _env = env;
         }
 
-        
+
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            
-            if(_env.IsProduction()){
-                                
+
+            if (_env.IsProduction())
+            {
+
                 Console.WriteLine("using sqlserver");
                 services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("PlatformsConnection")));
 
             }
-            else{
-                
+            else
+            {
+
                 Console.WriteLine("using in memory db");
 
                 services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("InMem"));
@@ -50,8 +54,8 @@ namespace Platformservice
             services.AddScoped<IPlatformRepo, PlatformRepo>();
 
             services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
-            services.AddSingleton<IMessageBusClient,MessageBusClient>();    
-            
+            services.AddSingleton<IMessageBusClient, MessageBusClient>();
+            services.AddGrpc();
             services.AddControllers();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddSwaggerGen(c =>
@@ -79,6 +83,12 @@ namespace Platformservice
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapGrpcService<GrpcPlatformService>();
+
+                endpoints.MapGet("/protos/platforms.proto", async context =>
+                {
+                    await context.Response.WriteAsync(System.IO.File.ReadAllText("Protos/platforms.proto"));
+                });
             });
 
             PrepDb.PrepPopulation(app, env.IsProduction());
